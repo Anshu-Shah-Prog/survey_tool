@@ -102,7 +102,7 @@ def append_to_google_sheet(data_dict, sheet_name="Responses"):
 
         # Open sheet, create worksheet if missing
         try:
-            sheet = client.open(sheet_name).worksheet("Responses")
+            sheet = client.open(sheet_name).worksheet("Sheet1")
         except gspread.exceptions.WorksheetNotFound:
             sh = client.open(sheet_name)
             sheet = sh.add_worksheet(title="Responses", rows=1000, cols=20)
