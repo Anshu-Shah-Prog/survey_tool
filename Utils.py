@@ -81,7 +81,7 @@ def map_to_english(q_id, selected_option, lang_code):
         return selected_option  # fallback if not found
 
 
-def append_to_google_sheet(data_dict, sheet_name="Database"):
+def append_to_google_sheet(data_dict, sheet_name="Responses"):
     """
     Appends data to Google Sheets using Streamlit secrets service account.
     Automatically creates 'Responses' worksheet if missing and adds headers if sheet is empty.
