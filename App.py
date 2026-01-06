@@ -179,6 +179,14 @@ def show_all_questions():
     if unanswered:
         st.info(t(lang, "answer_all", "Please answer all questions to continue."))
 
+SCALE_ORDER = [
+    ("sleep_quality", "🌙"),
+    ("WHO_total", "🙂"),
+    ("distress_total", "⚠️"),
+    ("cognitive_efficiency", "🧠"),
+    ("lifestyle_risk", "🔥")
+]
+
 # --------------------------------------------------
 # Final Page
 # --------------------------------------------------
