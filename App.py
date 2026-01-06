@@ -180,58 +180,85 @@ def show_all_questions():
         st.info(t(lang, "answer_all", "Please answer all questions to continue."))
 
 # --------------------------------------------------
-# FINAL PAGE
+# Final Page
 # --------------------------------------------------
 def show_final():
     lang = st.session_state.locked_lang
     scores = compute_scores(st.session_state.responses, lang)
-
     st.title(t(lang, "title"))
-    st.success(t(lang, "final_thanks"))
 
-    metrics = TRANSLATIONS["final_metrics"][lang]
-
+    st.success(t(lang, "final_thanks", "Thank you for completing the assessment!"))
+    st.subheader(t(lang, "final_scores", "Your Scores"))
+    # Display metrics using translations
+    metrics = TRANSLATIONS.get("final_metrics", {}).get(lang, {})
     col1, col2 = st.columns(2)
+
     with col1:
-        st.metric(metrics["sleep_quality"], scores["sleep_quality"])
-        st.metric(metrics["WHO_total"], scores["WHO_total"])
-        st.metric(metrics["distress_total"], scores["distress_total"])
+        st.metric(metrics.get("sleep_quality", "🌙 Sleep Quality (3–15)"), scores.get("sleep_quality", 0))
+        st.metric(metrics.get("WHO_total", "🙂 WHO-5 Well-being (0–100)"), scores.get("WHO_total", 0))
+        st.metric(metrics.get("distress_total", "⚠️ Mental Distress (6–30)"), scores.get("distress_total", 0))
+
     with col2:
-        st.metric(metrics["cognitive_efficiency"], scores["cognitive_efficiency"])
-        st.metric(metrics["lifestyle_risk"], scores["lifestyle_risk"])
+        st.metric(metrics.get("cognitive_efficiency", "🧠 Cognitive Efficiency (8–40)"), scores.get("cognitive_efficiency", 0))
+        st.metric(metrics.get("lifestyle_risk", "🔥 Lifestyle Risk (higher = worse)"), scores.get("lifestyle_risk", 0))
 
     labels = get_interpretation_labels(lang)
-    for key, icon in [
-        ("sleep_quality","🌙"),
-        ("WHO_total","🙂"),
-        ("distress_total","⚠️"),
-        ("cognitive_efficiency","🧠"),
-        ("lifestyle_risk","🔥")
-    ]:
-        interp = interpret_score(key, scores[key], lang)
-        if interp:
-            with st.container(border=True):
-                st.markdown(f"### {icon} {interp['title']}")
-                st.markdown(f"**{labels['level']}:** {interp['level']}")
-                st.markdown(interp["meaning"])
+    st.subheader(labels["section_title"])
+    
+    for scale_key, icon in SCALE_ORDER:
+        score_value = scores.get(scale_key)
+    
+        interp = interpret_score(scale_key, score_value, lang)
+    
+        if not interp:
+            continue
+    
+        with st.container(border=True):
+            st.markdown(
+                f"""
+                ### {icon} {interp['title']}
+                **{labels['level']}:** {interp['level']}
+    
+                {interp['meaning']}
+                """
+            )
+    
+            if interp.get("what_it_reflects"):
+                st.markdown(f"**{labels['reflects']}:**")
+                for item in interp["what_it_reflects"]:
+                    st.markdown(f"- {item}")
+    
+            if interp.get("what_to_change"):
+                st.markdown(f"**{labels['change']}:**")
+                for item in interp["what_to_change"]:
+                    st.markdown(f"- {item}")
 
-    # Save once
-    if not st.session_state.data_saved:
-        english_responses = {
-            q: map_to_english(q, a, lang)
-            for q, a in st.session_state.responses.items()
-        }
+    st.balloons()
 
+    # Convert all responses to English before saving
+    english_responses = {}
+    for q, ans in st.session_state.responses.items():
+        english_responses[q] = map_to_english(q, ans, st.session_state.locked_lang)
+
+    # Save data only once per session
+    if not st.session_state.get("data_saved", False):
         save_data = {
             "survey_id": st.session_state.survey_id,
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "lang": "en",
             **english_responses,
             **scores
         }
 
+        # # Debug log to check data
+        # st.write("Saving data to Google Sheets:", save_data)
+
         if append_to_google_sheet(save_data):
-            st.session_state.data_saved = True
             st.success(t(lang, "final_saved"))
+            st.write(t(lang, "done_message"))
+            st.session_state.data_saved = True  # prevent duplicate saves
+        else:
+            st.error("Failed to save data to Google Sheets. Please contact admin.")
 
 # --------------------------------------------------
 # NAVIGATION
