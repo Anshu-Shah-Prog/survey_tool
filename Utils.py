@@ -81,17 +81,22 @@ def map_to_english(q_id, selected_option, lang_code):
         return selected_option  # fallback if not found
 
 
-def append_to_google_sheet(data_dict, sheet_name="Responses"):
+def append_to_google_sheet(data_dict):
     """
-    Appends data to Google Sheets using Streamlit secrets service account.
-    Automatically creates 'Responses' worksheet if missing and adds headers if sheet is empty.
+    Appends data to Google Sheets using Streamlit secrets.
+    Spreadsheet is opened by ID.
+    Worksheet name is 'Responses'.
     """
     try:
         import gspread
         from google.oauth2.service_account import Credentials
         import streamlit as st
 
-        # Load credentials from Streamlit secrets
+        # Spreadsheet details
+        SPREADSHEET_ID = "1MnhhsaYBPyK93liW-Gcvb8dOgBMNqiinvQDeXUx0rdk"
+        WORKSHEET_NAME = "Sheet1"
+
+        # Load credentials
         creds_info = st.secrets["gcp_service_account"]
         scopes = [
             "https://www.googleapis.com/auth/spreadsheets",
@@ -100,21 +105,22 @@ def append_to_google_sheet(data_dict, sheet_name="Responses"):
         creds = Credentials.from_service_account_info(creds_info, scopes=scopes)
         client = gspread.authorize(creds)
 
-        # Open sheet, create worksheet if missing
-        try:
-            sheet = client.open(sheet_name).worksheet("Sheet1")
-        except gspread.exceptions.WorksheetNotFound:
-            sh = client.open(sheet_name)
-            sheet = sh.add_worksheet(title="Responses", rows=1000, cols=20)
+        # Open spreadsheet by ID
+        sh = client.open_by_key(SPREADSHEET_ID)
 
-        # Get existing rows to check if headers exist
-        existing = sheet.get_all_values()
-        if not existing:
-            # Append headers first
+        # Get or create worksheet
+        try:
+            sheet = sh.worksheet(WORKSHEET_NAME)
+        except gspread.exceptions.WorksheetNotFound:
+            sheet = sh.add_worksheet(title=WORKSHEET_NAME, rows=1000, cols=50)
+
+        # Add headers if sheet is empty
+        if not sheet.get_all_values():
             sheet.append_row(list(data_dict.keys()))
 
         # Append data
         sheet.append_row(list(data_dict.values()))
+
         return True
 
     except Exception as e:
