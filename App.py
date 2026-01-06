@@ -2,7 +2,7 @@ import streamlit as st
 from datetime import datetime
 import uuid
 
-from utils import t, t_question, append_to_google_sheet, TRANSLATIONS, map_to_english
+from Utils import t, t_question, append_to_google_sheet, TRANSLATIONS, map_to_english
 from UI import render_mcq_card
 from test_compute_scores import compute_scores
 from score_interpretations import interpret_score, get_interpretation_labels
